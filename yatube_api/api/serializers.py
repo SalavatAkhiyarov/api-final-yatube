@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from rest_framework.exceptions import ValidationError
 from django.contrib.auth import get_user_model
 
 from posts.models import Follow, Post, Comment, Group
@@ -46,3 +47,12 @@ class FollowSerializer(serializers.ModelSerializer):
     class Meta:
         model = Follow
         fields = '__all__'
+
+    def validate(self, data):
+        user = self.context['request'].user
+        following = data['following']
+        if user == following:
+            raise ValidationError('Невозможно подписаться на самого себя!')
+        if Follow.objects.filter(user=user, following=following).exists():
+            raise ValidationError('Вы уже подписаны на этого пользователя')
+        return data
